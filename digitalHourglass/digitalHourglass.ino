@@ -1,40 +1,91 @@
-const int switchPin = 8;
+int vcc = 2; //attach pin 2 to vcc
+int trig = 8; // attach pin 3 to Trig
+int echo = 7; //attach pin 4 to Echo
+int gnd = 5; //attach pin 5 to GND
 
-unsigned long previousTime = 0;
 
-int switchState = 0;
-int prevSwitchState = 0;
-
-int led = 2;
-
-long interval = 600000;
-
+int led = 3;
+int button = 2;
+int buttonstate = 0;
+int lastbutton = 0;
+boolean Running;
 void setup() {
-  for (int x = 2; x < 8; x++) {
-    pinMode(x, OUTPUT);
-  }
-  pinMode(switchPin, INPUT);
+
+  pinMode (vcc, OUTPUT);
+  pinMode (gnd, OUTPUT);
+  pinMode(button, INPUT);
+  // initialize the LED as an output:
+  pinMode(led, OUTPUT);
+  // initialize serial communication:
+  Serial.begin(9600);
 }
-void loop() {
-  unsigned long currentTime = millis();
 
-  if (currentTime - previousTime > interval) {
-    previousTime = currentTime;
-    digitalWrite(led, HIGH);
-    led++;
+void loop()
+{
+  buttonstate = digitalRead(button);
 
-    if (led == 7) {
+  if (buttonstate != lastbutton) {
+    if (buttonstate == HIGH) {
+      Running = true;
+    } else {
+      Running = false;
     }
+    delay(50);
   }
-  switchState = digitalRead(switchPin);
+  lastbutton = buttonstate;
 
-  if (switchState != prevSwitchState) {
-    for (int x = 2; x < 8; x++) {
-      digitalWrite(x, LOW);
-    }
-    led = 2;
-    previousTime = currentTime;
+  if(Running) {
+    digitalWrite(led,HIGH);
+  } else {
+    digitalWrite(led,LOW);
   }
+  digitalWrite(vcc, HIGH);
+  // establish variables for duration of the ping,
+  // and the distance result in inches and centimeters:
+  long duration, inches, cm;
 
-  prevSwitchState = switchState;
+  // The PING))) is triggered by a HIGH pulse of 2 or more microseconds.
+  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
+  pinMode(trig, OUTPUT);
+  digitalWrite(trig, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trig, HIGH);
+  delayMicroseconds(5);
+  digitalWrite(trig, LOW);
+
+  // The same pin is used to read the signal from the PING))): a HIGH
+  // pulse whose duration is the time (in microseconds) from the sending
+  // of the ping to the reception of its echo off of an object.
+  pinMode(echo, INPUT);
+  duration = pulseIn(echo, HIGH);
+
+  // convert the time into a distance
+  inches = microsecondsToInches(duration);
+  cm = microsecondsToCentimeters(duration);
+
+  Serial.print(inches);
+  Serial.print("in, ");
+  Serial.print(cm);
+  Serial.print("cm");
+  Serial.println();
+
+  delay(100);
+}
+
+long microsecondsToInches(long microseconds)
+{
+  // According to Parallax's datasheet for the PING))), there are
+  // 73.746 microseconds per inch (i.e. sound travels at 1130 feet per
+  // second). This gives the distance travelled by the ping, outbound
+  // and return, so we divide by 2 to get the distance of the obstacle.
+  // See: http://www.parallax.com/dl/docs/prod/acc/28015-PI...
+  return microseconds / 74 / 2;
+}
+
+long microsecondsToCentimeters(long microseconds)
+{
+  // The speed of sound is 340 m/s or 29 microseconds per centimeter.
+  // The ping travels out and back, so to find the distance of the
+  // object we take half of the distance travelled.
+  return microseconds / 29 / 2;
 }
