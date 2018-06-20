@@ -44,58 +44,40 @@ void setup() {
 
 void loop()
 {
-  // read the state of the switch into a local variable:
   int reading = digitalRead(button);
 
-  // check to see if you just pressed the button
-  // (i.e. the input went from LOW to HIGH), and you've waited long enough
-  // since the last press to ignore any noise:
-
-  // If the switch changed, due to noise or pressing:
   if (reading != lastButtonState) {
-    // reset the debouncing timer
+
     lastDebounceTime = millis();
   }
 
   if ((millis() - lastDebounceTime) > debounceDelay) {
-    // whatever the reading is at, it's been there for longer than the debounce
-    // delay, so take it as the actual current state:
-
-    // if the button state has changed:
+ 
     if (reading != buttonState) {
       buttonState = reading;
 
-      // only toggle the LED if the new button state is HIGH
       if (buttonState == HIGH) {
         ledState = !ledState;
       }
     }
   }
   lastButtonState = reading;
-  // set the LED:
-  // save the reading. Next time through the loop, it'll be the lastButtonState:
+
 
   digitalWrite(vcc, HIGH);
-  // establish variables for duration of the ping,
-  // and the distance result in inches and centimeters:
+
   long duration, inches, cm;
 
-  // The PING))) is triggered by a HIGH pulse of 2 or more microseconds.
-  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
   pinMode(trig, OUTPUT);
   digitalWrite(trig, LOW);
   delayMicroseconds(2);
   digitalWrite(trig, HIGH);
   delayMicroseconds(5);
   digitalWrite(trig, LOW);
-
-  // The same pin is used to read the signal from the PING))): a HIGH
-  // pulse whose duration is the time (in microseconds) from the sending
-  // of the ping to the reception of its echo off of an object.
+  
   pinMode(echo, INPUT);
   duration = pulseIn(echo, HIGH);
 
-  // convert the time into a distance
   inches = microsecondsToInches(duration);
   cm = microsecondsToCentimeters(duration);
 
@@ -110,11 +92,12 @@ void loop()
 
 
 
-  // checks if the
+  // checks if the power button is on
   if (ledState == HIGH) {
 
     delay(50);
 
+    // if the robot finds a wall it turns
     if (cm > 50) {
       forward();
     } else {
